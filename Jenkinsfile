@@ -19,8 +19,8 @@ pipeline {
 
     success {
       script {
-        // Capture last 100 lines of console log
-        def logContent = manager.build.logFile.text.readLines().takeRight(100).join("\n")
+        // Capture last 100 lines of console log safely
+        def logContent = currentBuild.rawBuild.getLog(100).join("\n")
 
         emailext(
           to: 'imvijay594@gmail.com',
@@ -44,7 +44,7 @@ ${readFile('output.txt')}
 
     failure {
       script {
-        def logContent = manager.build.logFile.text.readLines().takeRight(100).join("\n")
+        def logContent = currentBuild.rawBuild.getLog(100).join("\n")
 
         emailext(
           to: 'imvijay594@gmail.com',
