@@ -6,60 +6,51 @@ pipeline {
     stage('Run script') {
       steps {
         sh 'chmod +x hello.sh'
-        // run script and capture output to file
-        sh './hello.sh | tee output.txt'
+        // Save output into a file
+        sh './hello.sh | tee output.txt | tee build.log'
       }
     }
   }
 
   post {
     always {
-      archiveArtifacts artifacts: 'output.txt', fingerprint: true
+      archiveArtifacts artifacts: '*.txt,*.log', fingerprint: true
     }
 
     success {
-      script {
-        // Capture last 100 lines of console log safely
-        def logContent = currentBuild.rawBuild.getLog(100).join("\n")
-
-        emailext(
-          to: 'imvijay594@gmail.com',
-          subject: "Jenkins ✅ ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-          body: """Build succeeded!
+      emailext(
+        to: 'imvijay594@gmail.com',
+        subject: "Jenkins ✅ ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        body: """Build succeeded!
 
 Build URL: ${env.BUILD_URL}
 
-Last 100 lines of log:
+Script Output:
 ----------------------------------------
-${logContent}
+${readFile('output.txt')}
 ----------------------------------------
 
-Output file contents:
-${readFile('output.txt')}
+Console Log (last lines):
+----------------------------------------
+${readFile('build.log')}
+----------------------------------------
 """,
-          attachmentsPattern: 'output.txt'
-        )
-      }
+        attachmentsPattern: '*.txt,*.log'
+      )
     }
 
     failure {
-      script {
-        def logContent = currentBuild.rawBuild.getLog(100).join("\n")
-
-        emailext(
-          to: 'imvijay594@gmail.com',
-          subject: "Jenkins ❌ ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-          body: """Build failed.
+      emailext(
+        to: 'imvijay594@gmail.com',
+        subject: "Jenkins ❌ ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        body: """Build failed.
 
 Build URL: ${env.BUILD_URL}
 
-Last 100 lines of log:
-----------------------------------------
-${logContent}
-----------------------------------------
-"""
-        )
-      }
+See attached log files for details.
+""",
+        attachmentsPattern: '*.txt,*.log'
+      )
     }
   }
 }
